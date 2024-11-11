@@ -58,38 +58,44 @@ class Max : public IStatistics {
   double m_max = 0;
 };
 
-//class Mean : public IStatistics {
-// public:
-//  Mean() : m_mean{std::numeric_limits<double>::mean()} {
-//  }
-//
-//  void update(double next) override {
-//	if (next < m_mean) {
-//	  m_mean = next;
-//	}
-//  }
-//
-//  [[nodiscard]] double eval() const override {
-//	return m_mean;
-//  }
-//
-//  [[nodiscard]] const char *name() const override {
-//	return "max";
-//  }
-//
-// private:
-//  double m_mean;
-//};
+class Mean : public IStatistics {
+ public:
+  Mean() : m_mean{std::numeric_limits<double>::min()} {
+  }
+
+  void update(double next) override {
+	m_values.push_back(next);
+
+  }
+
+  [[nodiscard]] double eval() const override {
+	double tmp = 0;
+	for (auto m_value : m_values){
+	  tmp += m_value;
+	}
+
+	return  tmp / m_values.size();
+  }
+
+  [[nodiscard]] const char *name() const override {
+	return "mean";
+  }
+
+ private:
+  std::vector<double> m_values;
+  double m_mean;
+};
 
 
 int main() {
 
 
-  const size_t statistics_count = 2;
+  const size_t statistics_count = 3;
   IStatistics *statistics[statistics_count];
 
   statistics[0] = new Min{};
   statistics[1] = new Max{};
+  statistics[2] = new Mean{};
 
   double val = 0;
   while (std::cin >> val) {
