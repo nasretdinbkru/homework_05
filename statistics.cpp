@@ -2,6 +2,7 @@
 #include <limits>
 #include <cstring>
 #include <vector>
+#include <csignal>
 
 class IStatistics {
  public:
@@ -70,11 +71,11 @@ class Mean : public IStatistics {
 
   [[nodiscard]] double eval() const override {
 	double tmp = 0;
-	for (auto m_value : m_values){
+	for (auto m_value : m_values) {
 	  tmp += m_value;
 	}
 
-	return  tmp / m_values.size();
+	return tmp/m_values.size();
   }
 
   [[nodiscard]] const char *name() const override {
@@ -86,43 +87,47 @@ class Mean : public IStatistics {
   double m_mean;
 };
 
+std::sig_atomic_t sig_value = 0;
+
+void handler(int sig) {
+  sig_value = sig;
+}
 
 int main() {
 
 
+  std::cout
+	  << "Enter values in one line with whitespace as delimiter.\n"
+		 "For finish entering values press Enter\n"
+		 "And Ctrl+d for start statistic calculation." << std::endl;
+
+  std::signal(SIGHUP, handler);
   const size_t statistics_count = 3;
   IStatistics *statistics[statistics_count];
+  Min min{};
+  Max max{};
+  Mean mean{};
 
-  statistics[0] = new Min{};
-  statistics[1] = new Max{};
-  statistics[2] = new Mean{};
+  statistics[0] = &min;
+  statistics[1] = &max;
+  statistics[2] = &mean;
 
   double val = 0;
-  while (std::cin >> val) {
-	if (val == 'E' ) break;
-	if (!std::cin.good()){
-	  std::cerr << "Invalid input data\n";
-	  continue;
-	}
+  while (std::cin >> val && !std::cin.eof()) {
 	for (auto &statistic : statistics) {
 	  statistic->update(val);
 	}
   }
 
-//  // Handle invalid input data
-//  if (!std::cin.eof() && !std::cin.good()) {
-//	std::cerr << "Invalid input data\n";
-//	return 1;
-//  }
-
-  // Print results if any
-  for (auto &statistic : statistics) {
-	std::cout << statistic->name() << " = " << statistic->eval() << std::endl;
+// Handle invalid input data
+  if (!std::cin.eof() && !std::cin.good()) {
+	std::cerr << "Invalid input data\n";
+	return 1;
   }
 
-  // Clear memory - delete all objects created by new
+// Print results if any
   for (auto &statistic : statistics) {
-	delete statistic;
+	std::cout << statistic->name() << " = " << statistic->eval() << std::endl;
   }
 
   return 0;
